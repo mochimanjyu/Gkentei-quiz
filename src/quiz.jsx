@@ -33,14 +33,21 @@ export default function クイズ() {
   const [間違いリスト, 間違いを更新] = useState([]);
   const [復習モード, モードを更新] = useState(false);
   const [復習スタート, 復習スタート更新] = useState(false);
-  const [選択ジャンル, ジャンルを更新] = useState("すべて");
+  const [選択ジャンル, ジャンルを更新] = useState([]);
   const [出題数, 出題数を更新] = useState("全問");
   const [出題リスト, 出題リストを更新] = useState([]);
+  const [スコア履歴, スコア履歴を更新] = useState(() => {
+    const 保存済み = localStorage.getItem("スコア履歴");
+    return 保存済み ? JSON.parse(保存済み) : [];
+  });
 
-  const ジャンル一覧 = ["すべて", ...Array.from(new Set(質問リスト.map(q => q.ジャンル)))];
+  const ジャンル一覧 = Array.from(new Set(質問リスト.map(q => q.ジャンル)));
 
   useEffect(() => {
-    const ベースリスト = 選択ジャンル === "すべて" ? 質問リスト : 質問リスト.filter(q => q.ジャンル === 選択ジャンル);
+    const ベースリスト =
+      選択ジャンル.length === 0
+        ? 質問リスト
+        : 質問リスト.filter(q => 選択ジャンル.includes(q.ジャンル));
     let 出題数値 = ベースリスト.length;
     if (出題数 === "5問") 出題数値 = 5;
     else if (出題数 === "10問") 出題数値 = 10;
@@ -65,6 +72,19 @@ export default function クイズ() {
       選択を更新(null);
       解答表示を更新(false);
     } else {
+      if (!復習モード) {
+        const 新しい履歴 = [
+          ...スコア履歴,
+          {
+            スコア,
+            全問数: 出題リスト.length,
+            ジャンル: 選択ジャンル.join(", "),
+            日時: new Date().toLocaleString()
+          }
+        ];
+        スコア履歴を更新(新しい履歴);
+        localStorage.setItem("スコア履歴", JSON.stringify(新しい履歴));
+      }
       終了を更新(true);
     }
   };
@@ -98,24 +118,30 @@ export default function クイズ() {
           {!復習モード && (
             <>
               <div className="mb-4">
-                <label className="block mb-1 text-sm font-medium">ジャンルを選択：</label>
-                <select
-                  value={選択ジャンル}
-                  onChange={(e) => {
-                    ジャンルを更新(e.target.value);
-                    番号を更新(0);
-                    選択を更新(null);
-                    解答表示を更新(false);
-                    終了を更新(false);
-                    モードを更新(false);
-                    間違いを更新([]);
-                  }}
-                  className="w-full border px-2 py-1 rounded"
-                >
+                <label className="block mb-1 text-sm font-medium">ジャンルを選択（複数選択可）：</label>
+                <div className="grid grid-cols-2 gap-2">
                   {ジャンル一覧.map((g, i) => (
-                    <option key={i} value={g}>{g}</option>
+                    <label key={i} className="text-sm">
+                      <input
+                        type="checkbox"
+                        checked={選択ジャンル.includes(g)}
+                        onChange={(e) => {
+                          ジャンルを更新((前) =>
+                            e.target.checked ? [...前, g] : 前.filter((x) => x !== g)
+                          );
+                          番号を更新(0);
+                          選択を更新(null);
+                          解答表示を更新(false);
+                          終了を更新(false);
+                          モードを更新(false);
+                          間違いを更新([]);
+                        }}
+                        className="mr-1"
+                      />
+                      {g}
+                    </label>
                   ))}
-                </select>
+                </div>
               </div>
 
               <div className="mb-4">
@@ -189,9 +215,21 @@ export default function クイズ() {
           {復習モード && (
             <p className="mt-2 text-sm text-gray-600">復習モードも完了しました。おつかれさまでした！</p>
           )}
+
+          {!復習モード && スコア履歴.length > 0 && (
+            <div className="mt-6 text-left">
+              <h3 className="text-lg font-bold mb-2">📊 過去のスコア履歴</h3>
+              <ul className="text-sm space-y-1">
+                {スコア履歴.slice(-5).reverse().map((item, index) => (
+                  <li key={index}>
+                    {item.日時} - {item.ジャンル}：{item.スコア} / {item.全問数}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
- 
