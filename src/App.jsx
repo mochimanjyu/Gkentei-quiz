@@ -1,10 +1,5 @@
-import Quiz from "./Quiz";
+import クイズ from "./Quiz";
 
 export default function App() {
-  return (
-    <div>
-      <Quiz />
-    </div>
-  );
+  return <クイズ />;
 }
-
