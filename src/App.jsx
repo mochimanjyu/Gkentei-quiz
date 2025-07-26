@@ -1,11 +1,9 @@
 import クイズ from "./Quiz";
 
-function App() {
+export default function App() {
   return (
     <div className="App">
       <クイズ />
     </div>
   );
 }
-
-export default App;
