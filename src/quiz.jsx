@@ -83,6 +83,10 @@ export default function クイズ() {
 
   const 現在の質問 = 復習モード ? 間違いリスト[現在の番号] : 出題リスト[現在の番号];
 
+  if (!現在の質問) {
+    return <div className="p-4 text-center">読み込み中...</div>;
+  }
+
   return (
     <div className="p-4 max-w-md mx-auto">
       {!終了 ? (
