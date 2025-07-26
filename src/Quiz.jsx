@@ -27,12 +27,16 @@ export default function クイズ() {
   const [解答表示中, 解答表示を更新] = useState(false);
   const [スコア, スコアを更新] = useState(0);
   const [終了, 終了を更新] = useState(false);
+  const [間違いリスト, 間違いを更新] = useState([]);
+  const [復習モード, モードを更新] = useState(false);
 
   const 回答処理 = (インデックス) => {
     選択を更新(インデックス);
     解答表示を更新(true);
-    if (インデックス === 質問リスト[現在の番号].正解番号 - 1) {
+    if (インデックス === 現在の質問.正解番号 - 1) {
       スコアを更新((前) => 前 + 1);
+    } else {
+      間違いを更新((前) => [...前, 質問リスト[現在の番号]]);
     }
   };
 
@@ -41,18 +45,25 @@ export default function クイズ() {
       番号を更新((前) => 前 + 1);
       選択を更新(null);
       解答表示を更新(false);
+    } else if (!復習モード && 間違いリスト.length > 0) {
+      番号を更新(0);
+      選択を更新(null);
+      解答表示を更新(false);
+      モードを更新(true);
     } else {
       終了を更新(true);
     }
   };
 
-  const 現在の質問 = 質問リスト[現在の番号];
+  const 現在の質問 = 復習モード ? 間違いリスト[現在の番号] : 質問リスト[現在の番号];
 
   return (
     <div className="p-4 max-w-md mx-auto">
       {!終了 ? (
         <>
-          <h1 className="text-xl font-bold mb-4">第{現在の番号 + 1}問</h1>
+          <h1 className="text-xl font-bold mb-4">
+            {復習モード ? "復習モード" : "第" + (現在の番号 + 1) + "問"}
+          </h1>
           <p className="mb-4">{現在の質問.質問}</p>
           <ul className="space-y-2">
             {現在の質問.選択肢.map((選択肢テキスト, インデックス) => (
@@ -77,7 +88,7 @@ export default function クイズ() {
                 onClick={次の質問}
                 className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
               >
-                {現在の番号 < 質問リスト.length - 1 ? "次の問題へ" : "スコアを表示"}
+                {現在の番号 < (復習モード ? 間違いリスト.length - 1 : 質問リスト.length - 1) ? "次の問題へ" : "結果を表示"}
               </button>
             </div>
           )}
@@ -86,6 +97,9 @@ export default function クイズ() {
         <div className="text-center">
           <h2 className="text-2xl font-bold">クイズ終了！</h2>
           <p className="mt-4 text-lg">あなたのスコアは {スコア} / {質問リスト.length} です。</p>
+          {間違いリスト.length > 0 && !復習モード && (
+            <p className="mt-2 text-sm text-red-600">※間違えた問題を復習モードで再挑戦しました。</p>
+          )}
         </div>
       )}
     </div>
