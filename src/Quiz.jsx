@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function クイズ() {
   const 質問リスト = [
@@ -33,6 +33,20 @@ export default function クイズ() {
   const [間違いリスト, 間違いを更新] = useState([]);
   const [復習モード, モードを更新] = useState(false);
   const [復習スタート, 復習スタート更新] = useState(false);
+  const [選択ジャンル, ジャンルを更新] = useState("すべて");
+  const [出題数, 出題数を更新] = useState("全問");
+  const [出題リスト, 出題リストを更新] = useState([]);
+
+  const ジャンル一覧 = ["すべて", ...Array.from(new Set(質問リスト.map(q => q.ジャンル)))];
+
+  useEffect(() => {
+    const ベースリスト = 選択ジャンル === "すべて" ? 質問リスト : 質問リスト.filter(q => q.ジャンル === 選択ジャンル);
+    let 出題数値 = ベースリスト.length;
+    if (出題数 === "5問") 出題数値 = 5;
+    else if (出題数 === "10問") 出題数値 = 10;
+    const シャッフル = [...ベースリスト].sort(() => Math.random() - 0.5);
+    出題リストを更新(シャッフル.slice(0, 出題数値));
+  }, [選択ジャンル, 出題数]);
 
   const 回答処理 = (インデックス) => {
     選択を更新(インデックス);
@@ -40,12 +54,12 @@ export default function クイズ() {
     if (インデックス === 現在の質問.正解番号 - 1) {
       スコアを更新((前) => 前 + 1);
     } else {
-      間違いを更新((前) => [...前, 質問リスト[現在の番号]]);
+      間違いを更新((前) => [...前, 現在の質問]);
     }
   };
 
   const 次の質問 = () => {
-    const 現在のリスト = 復習モード ? 間違いリスト : 質問リスト;
+    const 現在のリスト = 復習モード ? 間違いリスト : 出題リスト;
     if (現在の番号 < 現在のリスト.length - 1) {
       番号を更新((前) => 前 + 1);
       選択を更新(null);
@@ -67,7 +81,7 @@ export default function クイズ() {
     }
   };
 
-  const 現在の質問 = 復習モード ? 間違いリスト[現在の番号] : 質問リスト[現在の番号];
+  const 現在の質問 = 復習モード ? 間違いリスト[現在の番号] : 出題リスト[現在の番号];
 
   return (
     <div className="p-4 max-w-md mx-auto">
@@ -76,6 +90,53 @@ export default function クイズ() {
           <h1 className="text-xl font-bold mb-4">
             {復習モード ? "復習モード 第" + (現在の番号 + 1) + "問" : "第" + (現在の番号 + 1) + "問"}
           </h1>
+
+          {!復習モード && (
+            <>
+              <div className="mb-4">
+                <label className="block mb-1 text-sm font-medium">ジャンルを選択：</label>
+                <select
+                  value={選択ジャンル}
+                  onChange={(e) => {
+                    ジャンルを更新(e.target.value);
+                    番号を更新(0);
+                    選択を更新(null);
+                    解答表示を更新(false);
+                    終了を更新(false);
+                    モードを更新(false);
+                    間違いを更新([]);
+                  }}
+                  className="w-full border px-2 py-1 rounded"
+                >
+                  {ジャンル一覧.map((g, i) => (
+                    <option key={i} value={g}>{g}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-4">
+                <label className="block mb-1 text-sm font-medium">出題数を選択：</label>
+                <select
+                  value={出題数}
+                  onChange={(e) => {
+                    出題数を更新(e.target.value);
+                    番号を更新(0);
+                    選択を更新(null);
+                    解答表示を更新(false);
+                    終了を更新(false);
+                    モードを更新(false);
+                    間違いを更新([]);
+                  }}
+                  className="w-full border px-2 py-1 rounded"
+                >
+                  <option value="全問">全問</option>
+                  <option value="5問">5問</option>
+                  <option value="10問">10問</option>
+                </select>
+              </div>
+            </>
+          )}
+
           <p className="text-sm text-gray-500 mb-1">ジャンル：{現在の質問.ジャンル}</p>
           <p className="mb-4">{現在の質問.質問}</p>
           <ul className="space-y-2">
@@ -109,7 +170,7 @@ export default function クイズ() {
       ) : (
         <div className="text-center">
           <h2 className="text-2xl font-bold">クイズ終了！</h2>
-          <p className="mt-4 text-lg">あなたのスコアは {スコア} / {(復習モード ? 間違いリスト.length : 質問リスト.length)} です。</p>
+          <p className="mt-4 text-lg">あなたのスコアは {スコア} / {(復習モード ? 間違いリスト.length : 出題リスト.length)} です。</p>
           {!復習モード && 間違いリスト.length > 0 && (
             <>
               <p className="mt-2 text-sm text-red-600">※間違えた問題があります。復習モードで再挑戦できます。</p>
